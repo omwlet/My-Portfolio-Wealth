@@ -200,6 +200,20 @@ app.get("/api/chart/:symbol", async (req, res) => {
   }
 });
 
+// FX rate: how many units of `to` per 1 USD (e.g. to=THB -> ~36).
+app.get("/api/fx", async (req, res) => {
+  const to = String(req.query.to ?? "USD").toUpperCase();
+  if (to === "USD") return res.json({ code: "USD", rate: 1 });
+  try {
+    const { meta } = await getChart(`USD${to}=X`, "1d", "1h");
+    const rate = meta.regularMarketPrice ?? meta.chartPreviousClose ?? meta.previousClose;
+    if (!rate) throw new Error("no rate");
+    res.json({ code: to, rate });
+  } catch (e) {
+    res.status(502).json({ error: String(e?.message ?? e), code: to, rate: 1 });
+  }
+});
+
 app.get("/api/news", async (req, res) => {
   try {
     const symbol = req.query.symbol ? String(req.query.symbol) : "";

@@ -18,18 +18,8 @@ const RESISTANCE_COLORS = ["#ff4fa3", "#ff4d6d", "#ffcf3f", "#ff8a3f"]; // pinks
 
 export function chartTheme(theme: "dark" | "light") {
   return theme === "light"
-    ? {
-        bg: "#ffffff",
-        text: "#5b6473",
-        grid: "rgba(0,0,0,0.06)",
-        border: "#dfe3ea",
-      }
-    : {
-        bg: "#121212",
-        text: "#8b8f9a",
-        grid: "rgba(255,255,255,0.05)",
-        border: "#24262d",
-      };
+    ? { bg: "#ffffff", text: "#5b6473", grid: "rgba(0,0,0,0.06)", border: "#dfe3ea" }
+    : { bg: "#121212", text: "#8b8f9a", grid: "rgba(255,255,255,0.05)", border: "#24262d" };
 }
 
 export function PriceChart({
@@ -39,6 +29,7 @@ export function PriceChart({
   supports,
   resistances,
   theme,
+  viewKey,
 }: {
   candles: Candle[];
   chartType: ChartType;
@@ -46,12 +37,16 @@ export function PriceChart({
   supports: number[];
   resistances: number[];
   theme: "dark" | "light";
+  /** changes when symbol/range/type change — gates auto-fit so live polls don't reset zoom */
+  viewKey: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const mainRef = useRef<ISeriesApi<"Candlestick" | "Line"> | null>(null);
   const overlayRefs = useRef<ISeriesApi<"Line">[]>([]);
   const priceLinesRef = useRef<IPriceLine[]>([]);
+  const lastTypeRef = useRef<ChartType | null>(null);
+  const lastViewKeyRef = useRef<string>("");
 
   // --- create chart once ---
   useEffect(() => {
@@ -63,10 +58,7 @@ export function PriceChart({
         textColor: c.text,
         fontFamily: "ui-sans-serif, system-ui, sans-serif",
       },
-      grid: {
-        vertLines: { color: c.grid },
-        horzLines: { color: c.grid },
-      },
+      grid: { vertLines: { color: c.grid }, horzLines: { color: c.grid } },
       crosshair: {
         mode: CrosshairMode.Normal,
         vertLine: { color: "#4f9bff", width: 1, style: LineStyle.Dashed },
@@ -77,13 +69,13 @@ export function PriceChart({
       autoSize: true,
     });
     chartRef.current = chart;
-
     return () => {
       chart.remove();
       chartRef.current = null;
       mainRef.current = null;
       overlayRefs.current = [];
       priceLinesRef.current = [];
+      lastTypeRef.current = null;
     };
   }, []);
 
@@ -100,44 +92,43 @@ export function PriceChart({
     });
   }, [theme]);
 
-  // --- (re)build main series + overlays when type/data/overlays change ---
+  // --- update data + overlays. Recreate the main series only when the chart
+  //     TYPE changes; otherwise reuse it (so live polls update in place). ---
   useEffect(() => {
     const chart = chartRef.current;
     if (!chart || !candles.length) return;
 
-    // Clear previous main + overlay series.
-    if (mainRef.current) {
-      chart.removeSeries(mainRef.current);
-      mainRef.current = null;
-    }
-    overlayRefs.current.forEach((s) => chart.removeSeries(s));
-    overlayRefs.current = [];
+    const data = chartType === "heikin" ? toHeikinAshi(candles) : candles;
 
-    const data =
-      chartType === "heikin" ? toHeikinAshi(candles) : candles;
+    // (Re)create the main series only if the type changed.
+    if (!mainRef.current || lastTypeRef.current !== chartType) {
+      if (mainRef.current) chart.removeSeries(mainRef.current);
+      mainRef.current =
+        chartType === "line"
+          ? chart.addLineSeries({
+              color: "#00e08a",
+              lineWidth: 2,
+              priceLineVisible: false,
+              lastValueVisible: true,
+            })
+          : chart.addCandlestickSeries({
+              upColor: "#16c784",
+              downColor: "#ff4d6d",
+              borderUpColor: "#16c784",
+              borderDownColor: "#ff4d6d",
+              wickUpColor: "#16c784",
+              wickDownColor: "#ff4d6d",
+              priceLineVisible: false,
+            });
+      lastTypeRef.current = chartType;
+    }
 
     if (chartType === "line") {
-      const line = chart.addLineSeries({
-        color: "#00e08a",
-        lineWidth: 2,
-        priceLineVisible: false,
-        lastValueVisible: true,
-      });
-      line.setData(
+      (mainRef.current as ISeriesApi<"Line">).setData(
         data.map((c) => ({ time: c.time as UTCTimestamp, value: c.close }))
       );
-      mainRef.current = line;
     } else {
-      const candle = chart.addCandlestickSeries({
-        upColor: "#16c784",
-        downColor: "#ff4d6d",
-        borderUpColor: "#16c784",
-        borderDownColor: "#ff4d6d",
-        wickUpColor: "#16c784",
-        wickDownColor: "#ff4d6d",
-        priceLineVisible: false,
-      });
-      candle.setData(
+      (mainRef.current as ISeriesApi<"Candlestick">).setData(
         data.map((c) => ({
           time: c.time as UTCTimestamp,
           open: c.open,
@@ -146,19 +137,16 @@ export function PriceChart({
           close: c.close,
         }))
       );
-      mainRef.current = candle;
     }
 
-    // Bollinger Bands overlay.
+    // Rebuild overlays.
+    overlayRefs.current.forEach((s) => chart.removeSeries(s));
+    overlayRefs.current = [];
     if (overlays.bollinger) {
       const { upper, lower, mid } = computeBollinger(candles);
-      const mk = (
-        color: string,
-        style: LineStyle,
-        pts: { time: number; value: number }[]
-      ) => {
+      const mk = (style: LineStyle, pts: { time: number; value: number }[]) => {
         const s = chart.addLineSeries({
-          color,
+          color: "#ffcf3f",
           lineWidth: 1,
           lineStyle: style,
           priceLineVisible: false,
@@ -168,12 +156,10 @@ export function PriceChart({
         s.setData(pts.map((p) => ({ time: p.time as UTCTimestamp, value: p.value })));
         overlayRefs.current.push(s);
       };
-      mk("#ffcf3f", LineStyle.Solid, upper);
-      mk("#ffcf3f", LineStyle.Dotted, mid);
-      mk("#ffcf3f", LineStyle.Solid, lower);
+      mk(LineStyle.Solid, upper);
+      mk(LineStyle.Dotted, mid);
+      mk(LineStyle.Solid, lower);
     }
-
-    // SMA 50 overlay.
     if (overlays.sma) {
       const sma = computeSMA(candles, 50);
       const s = chart.addLineSeries({
@@ -187,14 +173,17 @@ export function PriceChart({
       overlayRefs.current.push(s);
     }
 
-    chart.timeScale().fitContent();
-  }, [candles, chartType, overlays.bollinger, overlays.sma]);
+    // Only auto-fit when the view actually changes (not on every live poll).
+    if (lastViewKeyRef.current !== viewKey) {
+      chart.timeScale().fitContent();
+      lastViewKeyRef.current = viewKey;
+    }
+  }, [candles, chartType, overlays.bollinger, overlays.sma, viewKey]);
 
   // --- support/resistance horizontal price lines ---
   useEffect(() => {
     const series = mainRef.current;
     if (!series) return;
-    // Remove old lines.
     priceLinesRef.current.forEach((l) => series.removePriceLine(l));
     priceLinesRef.current = [];
     if (!overlays.sr) return;
@@ -223,7 +212,7 @@ export function PriceChart({
         })
       );
     });
-  }, [supports, resistances, overlays.sr, chartType, candles]);
+  }, [supports, resistances, overlays.sr, chartType, viewKey]);
 
   return <div ref={containerRef} className="h-full w-full" />;
 }

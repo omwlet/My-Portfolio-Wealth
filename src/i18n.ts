@@ -17,6 +17,7 @@ const en: Dict = {
   "nav.news": "News",
   "settings.light": "Light",
   "settings.dark": "Dark",
+  "search.placeholder": "Search ticker…",
 
   // asset header
   "header.prevClose": "Prev Close",
@@ -141,6 +142,7 @@ const th: Dict = {
   "nav.news": "ข่าว",
   "settings.light": "สว่าง",
   "settings.dark": "มืด",
+  "search.placeholder": "ค้นหาสัญลักษณ์…",
 
   "header.prevClose": "ราคาปิดก่อนหน้า",
   "header.high52": "สูงสุด 52 สัปดาห์",

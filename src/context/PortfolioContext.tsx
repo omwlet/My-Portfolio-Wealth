@@ -57,9 +57,14 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(holdings));
   }, [holdings]);
 
+  // Poll quotes for all holdings + whatever symbol is currently being viewed
+  // (so a searched, non-held ticker still gets a live header quote).
   const symbols = useMemo(
-    () => Array.from(new Set(holdings.map((h) => h.symbol))),
-    [holdings]
+    () =>
+      Array.from(
+        new Set([...holdings.map((h) => h.symbol), selectedSymbol].filter(Boolean))
+      ),
+    [holdings, selectedSymbol]
   );
 
   const refresh = useCallback(async () => {
@@ -89,9 +94,10 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     };
   }, [refresh]);
 
-  // Keep selection valid.
+  // If the selected symbol becomes empty, fall back to the first holding.
+  // (We intentionally allow viewing symbols that aren't held — e.g. via search.)
   useEffect(() => {
-    if (holdings.length && !holdings.some((h) => h.symbol === selectedSymbol)) {
+    if (!selectedSymbol && holdings.length) {
       setSelectedSymbol(holdings[0].symbol);
     }
   }, [holdings, selectedSymbol]);

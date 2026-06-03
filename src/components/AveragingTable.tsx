@@ -1,5 +1,6 @@
 import { buildAveraging, fmtMoney, fmtNum } from "../lib/calc";
 import { useUI } from "../context/UIContext";
+import { useCurrency } from "../context/CurrencyContext";
 import { cn } from "./ui";
 
 export function AveragingTable({
@@ -14,6 +15,7 @@ export function AveragingTable({
   supports: number[];
 }) {
   const { t } = useUI();
+  const { money } = useCurrency();
   const rows = buildAveraging(shares, avgCost, amount, supports);
 
   return (
@@ -57,7 +59,7 @@ export function AveragingTable({
         </tbody>
       </table>
       <p className="mt-2 text-[11px] leading-relaxed text-ink-dim">
-        {t("avg.help", { amt: fmtMoney(amount) })}
+        {t("avg.help", { amt: money(amount) })}
       </p>
     </div>
   );

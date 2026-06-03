@@ -1,5 +1,6 @@
 import { fmtMoney } from "../lib/calc";
 import { useUI } from "../context/UIContext";
+import { useCurrency } from "../context/CurrencyContext";
 import { Panel, cn } from "./ui";
 import { SRMatrix } from "./SRMatrix";
 import { AveragingTable } from "./AveragingTable";
@@ -38,6 +39,9 @@ export function PositionPanel({
   heldAvgCost: number;
 }) {
   const { t } = useUI();
+  const { currency, rate, money, toUsd } = useCurrency();
+  // The investment is stored in USD; show/edit it in the selected currency.
+  const investDisplay = +(investment * rate).toFixed(currency.digits);
   return (
     <Panel
       title={
@@ -62,15 +66,15 @@ export function PositionPanel({
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
               <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-dim">
-                $
+                {currency.symbol}
               </span>
               <input
                 type="number"
-                value={investment}
+                value={investDisplay}
                 disabled={locked}
                 min={0}
                 step={50}
-                onChange={(e) => setInvestment(Number(e.target.value))}
+                onChange={(e) => setInvestment(toUsd(Number(e.target.value)))}
                 className={cn(
                   "tnum w-full rounded-lg border border-border bg-panel-2 py-2 pl-7 pr-3 text-right text-base font-semibold outline-none focus:ring-1 focus:ring-accent-blue",
                   locked && "opacity-60"
@@ -120,7 +124,7 @@ export function PositionPanel({
           />
         </div>
         <p className="text-[11px] leading-relaxed text-ink-dim">
-          {t("calc.help", { amt: fmtMoney(investment) })}
+          {t("calc.help", { amt: money(investment) })}
         </p>
 
         {/* Average-down helper — only when this ticker is a held position */}

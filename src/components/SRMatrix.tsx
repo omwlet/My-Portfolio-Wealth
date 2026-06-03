@@ -1,5 +1,6 @@
 import { buildMatrix, fmtMoney, fmtNum } from "../lib/calc";
 import { useUI } from "../context/UIContext";
+import { useCurrency } from "../context/CurrencyContext";
 import { cn } from "./ui";
 
 export function SRMatrix({
@@ -12,6 +13,7 @@ export function SRMatrix({
   resistances: number[];
 }) {
   const { t } = useUI();
+  const { money } = useCurrency();
   const matrix = buildMatrix(investment, supports, resistances);
 
   return (
@@ -52,7 +54,7 @@ export function SRMatrix({
                   >
                     <div className="font-semibold">
                       {positive ? "+" : "-"}
-                      {fmtMoney(Math.abs(cell.profit))}
+                      {money(Math.abs(cell.profit))}
                     </div>
                     <div className="opacity-80">
                       ({positive ? "+" : ""}
