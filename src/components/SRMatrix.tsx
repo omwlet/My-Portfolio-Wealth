@@ -1,4 +1,5 @@
 import { buildMatrix, fmtMoney, fmtNum } from "../lib/calc";
+import { useUI } from "../context/UIContext";
 import { cn } from "./ui";
 
 export function SRMatrix({
@@ -10,6 +11,7 @@ export function SRMatrix({
   supports: number[];
   resistances: number[];
 }) {
+  const { t } = useUI();
   const matrix = buildMatrix(investment, supports, resistances);
 
   return (
@@ -18,7 +20,7 @@ export function SRMatrix({
         <thead>
           <tr>
             <th className="sticky left-0 z-10 bg-panel px-2 py-2 text-left text-ink-dim">
-              Entry ＼ Target
+              {t("calc.entryTarget")}
             </th>
             {resistances.map((r, i) => (
               <th key={i} className="px-2 py-2 text-right">

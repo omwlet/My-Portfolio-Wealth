@@ -1,4 +1,5 @@
 import { usePortfolio } from "../context/PortfolioContext";
+import { useUI } from "../context/UIContext";
 import { fmtMoney, fmtPct, fmtSigned } from "../lib/calc";
 import { AddShares } from "./AddShares";
 import { Panel, cn } from "./ui";
@@ -6,14 +7,17 @@ import { Panel, cn } from "./ui";
 export function PortfolioOverview() {
   const { stats, selectedSymbol, setSelectedSymbol, removeHolding, lastUpdated } =
     usePortfolio();
+  const { t } = useUI();
   const { positions } = stats;
 
   return (
     <Panel
-      title="Portfolio Holdings"
+      title={t("holdings.title")}
       right={
         <span className="text-xs text-ink-dim">
-          {lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString()}` : "Loading…"}
+          {lastUpdated
+            ? t("holdings.updated", { time: lastUpdated.toLocaleTimeString() })
+            : t("holdings.loading")}
         </span>
       }
     >
@@ -23,13 +27,13 @@ export function PortfolioOverview() {
           <table className="w-full text-sm">
             <thead className="text-xs text-ink-dim">
               <tr className="text-left">
-                <th className="py-2 pr-2">Symbol</th>
-                <th className="py-2 px-2 text-right">Shares</th>
-                <th className="py-2 px-2 text-right">Avg Cost</th>
-                <th className="py-2 px-2 text-right">Price</th>
-                <th className="py-2 px-2 text-right">Mkt Value</th>
-                <th className="py-2 px-2 text-right">Unrealized P/L</th>
-                <th className="py-2 px-2 text-right">Weight</th>
+                <th className="py-2 pr-2">{t("holdings.symbol")}</th>
+                <th className="py-2 px-2 text-right">{t("holdings.shares")}</th>
+                <th className="py-2 px-2 text-right">{t("holdings.avgCost")}</th>
+                <th className="py-2 px-2 text-right">{t("holdings.price")}</th>
+                <th className="py-2 px-2 text-right">{t("holdings.mktValue")}</th>
+                <th className="py-2 px-2 text-right">{t("holdings.unrealized")}</th>
+                <th className="py-2 px-2 text-right">{t("holdings.weight")}</th>
                 <th className="py-2 pl-2"></th>
               </tr>
             </thead>
@@ -90,7 +94,7 @@ export function PortfolioOverview() {
               {!positions.length && (
                 <tr>
                   <td colSpan={8} className="py-6 text-center text-ink-dim">
-                    No positions yet — add one on the right.
+                    {t("holdings.empty")}
                   </td>
                 </tr>
               )}
@@ -100,7 +104,7 @@ export function PortfolioOverview() {
 
         {/* Add form */}
         <div className="rounded-lg border border-border bg-panel-2/40 p-3">
-          <h3 className="mb-2 text-sm font-semibold">Add shares</h3>
+          <h3 className="mb-2 text-sm font-semibold">{t("holdings.addTitle")}</h3>
           <AddShares />
         </div>
       </div>

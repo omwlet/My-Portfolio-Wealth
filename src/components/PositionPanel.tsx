@@ -1,4 +1,5 @@
 import { fmtMoney } from "../lib/calc";
+import { useUI } from "../context/UIContext";
 import { Panel, cn } from "./ui";
 import { SRMatrix } from "./SRMatrix";
 
@@ -31,12 +32,13 @@ export function PositionPanel({
   setResistance: (i: number, v: number) => void;
   onReset: () => void;
 }) {
+  const { t } = useUI();
   return (
     <Panel
       title={
         <span>
-          ตารางคำนวณ แนวรับ-แนวต้าน
-          <span className="ml-2 text-ink-dim">· {symbol} Entry Calculator</span>
+          {t("calc.title")}
+          <span className="ml-2 text-ink-dim">· {t("calc.subtitle", { sym: symbol })}</span>
         </span>
       }
       right={
@@ -44,14 +46,14 @@ export function PositionPanel({
           onClick={onReset}
           className="rounded-md px-2 py-1 text-xs text-ink-dim hover:bg-panel-2 hover:text-ink"
         >
-          Reset levels
+          {t("calc.reset")}
         </button>
       }
     >
       <div className="space-y-4 p-4">
         {/* Investment amount */}
         <div>
-          <label className="mb-1 block text-xs text-ink-dim">Investment Amount</label>
+          <label className="mb-1 block text-xs text-ink-dim">{t("calc.investment")}</label>
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
               <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-dim">
@@ -72,16 +74,16 @@ export function PositionPanel({
             </div>
           </div>
           <div className="mt-2 flex flex-wrap gap-4 text-xs">
-            <Check label="Lock this amount" checked={locked} onChange={setLocked} />
+            <Check label={t("calc.lock")} checked={locked} onChange={setLocked} />
             <Check
-              label="Use current price as entry"
+              label={t("calc.useCurrent")}
               checked={useCurrentPrice}
               onChange={setUseCurrentPrice}
             />
           </div>
           {useCurrentPrice && (
             <p className="mt-1 text-xs text-accent-yellow">
-              Entry overridden with live price {fmtMoney(currentPrice)} (S1).
+              {t("calc.entryOverride", { price: fmtMoney(currentPrice) })}
             </p>
           )}
         </div>
@@ -89,14 +91,14 @@ export function PositionPanel({
         {/* Editable S / R baselines */}
         <div className="grid grid-cols-2 gap-4">
           <LevelEditor
-            title="Supports (entries)"
+            title={t("calc.supports")}
             color="text-accent-purple"
             prefix="S"
             values={supports}
             onChange={setSupport}
           />
           <LevelEditor
-            title="Resistances (targets)"
+            title={t("calc.resistances")}
             color="text-accent-pink"
             prefix="R"
             values={resistances}
@@ -113,10 +115,7 @@ export function PositionPanel({
           />
         </div>
         <p className="text-[11px] leading-relaxed text-ink-dim">
-          Each cell = profit &amp; % return if you invest{" "}
-          <span className="text-ink">{fmtMoney(investment)}</span> at the row's support
-          and exit at the column's resistance. Percentages are independent of the amount;
-          dollar profit scales with it.
+          {t("calc.help", { amt: fmtMoney(investment) })}
         </p>
       </div>
     </Panel>

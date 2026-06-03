@@ -1,8 +1,10 @@
-import { fmtMoney, fmtCompact } from "../lib/calc";
+import { fmtMoney } from "../lib/calc";
+import { useUI } from "../context/UIContext";
 import type { Quote } from "../types";
 import { cn } from "./ui";
 
 export function AssetHeader({ quote, symbol }: { quote?: Quote; symbol: string }) {
+  const { t } = useUI();
   const up = (quote?.change ?? 0) >= 0;
   return (
     <div className="flex flex-wrap items-end justify-between gap-4 px-5 py-4">
@@ -13,7 +15,7 @@ export function AssetHeader({ quote, symbol }: { quote?: Quote; symbol: string }
             {quote?.exchange || "—"}
           </span>
         </div>
-        <p className="mt-1 text-sm text-ink-dim">{quote?.name ?? "Loading…"}</p>
+        <p className="mt-1 text-sm text-ink-dim">{quote?.name ?? t("header.loading")}</p>
       </div>
 
       <div className="text-right">
@@ -31,16 +33,16 @@ export function AssetHeader({ quote, symbol }: { quote?: Quote; symbol: string }
                 up ? "+" : ""
               }${quote.changePct.toFixed(2)}%)`
             : "—"}
-          <span className="ml-1 text-ink-dim">today</span>
+          <span className="ml-1 text-ink-dim">{t("header.today")}</span>
         </div>
       </div>
 
       <dl className="flex w-full gap-6 border-t border-border pt-3 text-xs sm:w-auto sm:border-t-0 sm:pt-0">
-        <Field label="Prev Close" value={quote ? fmtMoney(quote.previousClose) : "—"} />
-        <Field label="52W High" value={quote?.high52 ? fmtMoney(quote.high52) : "—"} />
-        <Field label="52W Low" value={quote?.low52 ? fmtMoney(quote.low52) : "—"} />
+        <Field label={t("header.prevClose")} value={quote ? fmtMoney(quote.previousClose) : "—"} />
+        <Field label={t("header.high52")} value={quote?.high52 ? fmtMoney(quote.high52) : "—"} />
+        <Field label={t("header.low52")} value={quote?.low52 ? fmtMoney(quote.low52) : "—"} />
         <Field
-          label="Range Pos"
+          label={t("header.rangePos")}
           value={
             quote?.high52 && quote?.low52
               ? `${(

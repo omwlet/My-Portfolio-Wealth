@@ -7,32 +7,36 @@ import {
   type UTCTimestamp,
 } from "lightweight-charts";
 import { computeRSI } from "../lib/calc";
+import { chartTheme } from "./PriceChart";
 import type { Candle } from "../types";
 
 export function SubChart({
   candles,
   kind,
+  theme,
 }: {
   candles: Candle[];
   kind: "rsi" | "volume";
+  theme: "dark" | "light";
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
+    const c = chartTheme(theme);
     const chart = createChart(containerRef.current, {
       layout: {
-        background: { type: ColorType.Solid, color: "#121212" },
-        textColor: "#8b8f9a",
+        background: { type: ColorType.Solid, color: c.bg },
+        textColor: c.text,
         fontFamily: "ui-sans-serif, system-ui, sans-serif",
       },
       grid: {
-        vertLines: { color: "rgba(255,255,255,0.04)" },
-        horzLines: { color: "rgba(255,255,255,0.05)" },
+        vertLines: { color: c.grid },
+        horzLines: { color: c.grid },
       },
-      rightPriceScale: { borderColor: "#24262d" },
-      timeScale: { borderColor: "#24262d", timeVisible: true, secondsVisible: false },
+      rightPriceScale: { borderColor: c.border },
+      timeScale: { borderColor: c.border, timeVisible: true, secondsVisible: false },
       autoSize: true,
     });
     chartRef.current = chart;
@@ -41,6 +45,19 @@ export function SubChart({
       chartRef.current = null;
     };
   }, []);
+
+  // Re-theme on toggle.
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    const c = chartTheme(theme);
+    chart.applyOptions({
+      layout: { background: { type: ColorType.Solid, color: c.bg }, textColor: c.text },
+      grid: { vertLines: { color: c.grid }, horzLines: { color: c.grid } },
+      rightPriceScale: { borderColor: c.border },
+      timeScale: { borderColor: c.border },
+    });
+  }, [theme]);
 
   useEffect(() => {
     const chart = chartRef.current;

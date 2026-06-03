@@ -20,6 +20,27 @@
   --color-accent-blue: #4f9bff;
 }
 
+/* Light theme overrides — toggled by adding `.light` to <html>.
+   Tailwind v4 references these vars at runtime, so utilities re-theme live. */
+.light {
+  --color-bg: #f4f6f9;
+  --color-panel: #ffffff;
+  --color-panel-2: #eef1f6;
+  --color-border: #dfe3ea;
+  --color-ink: #11131a;
+  --color-ink-dim: #5b6473;
+
+  --color-up: #00a368;
+  --color-up-soft: #008f5b;
+  --color-down: #e0244e;
+  --color-down-soft: #d11f46;
+
+  --color-accent-purple: #7c3aed;
+  --color-accent-pink: #db2777;
+  --color-accent-yellow: #d4a017;
+  --color-accent-blue: #2563eb;
+}
+
 html,
 body,
 #root {
@@ -47,7 +68,7 @@ body {
   height: 8px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #2a2c34;
+  background: var(--color-border);
   border-radius: 8px;
 }
 ::-webkit-scrollbar-track {

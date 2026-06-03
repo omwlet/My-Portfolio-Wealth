@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { usePortfolio } from "../context/PortfolioContext";
+import { useUI } from "../context/UIContext";
 import { api } from "../lib/api";
 import { cn } from "./ui";
 
 export function AddShares() {
   const { addHolding } = usePortfolio();
+  const { t } = useUI();
   const [symbol, setSymbol] = useState("");
   const [shares, setShares] = useState("");
   const [avgCost, setAvgCost] = useState("");
@@ -18,9 +20,9 @@ export function AddShares() {
     try {
       const q = await api.quote(symbol.toUpperCase());
       setAvgCost(String(q.price));
-      setMsg(`Live ${q.symbol}: $${q.price}`);
+      setMsg(`${q.symbol}: $${q.price}`);
     } catch {
-      setMsg("Could not fetch price — check the ticker.");
+      setMsg(t("add.errFetch"));
     } finally {
       setBusy(false);
     }
@@ -31,11 +33,11 @@ export function AddShares() {
     const sh = Number(shares);
     const ac = Number(avgCost);
     if (!symbol.trim() || !(sh > 0) || !(ac > 0)) {
-      setMsg("Enter a ticker, positive shares and a cost.");
+      setMsg(t("add.errInputs"));
       return;
     }
     addHolding({ symbol: symbol.toUpperCase().trim(), shares: sh, avgCost: ac });
-    setMsg(`Added ${sh} ${symbol.toUpperCase()} @ $${ac}`);
+    setMsg(t("add.added", { sh, sym: symbol.toUpperCase(), ac }));
     setSymbol("");
     setShares("");
     setAvgCost("");
@@ -45,20 +47,20 @@ export function AddShares() {
     <form onSubmit={submit} className="space-y-2">
       <div className="grid grid-cols-3 gap-2">
         <Input
-          placeholder="Ticker"
+          placeholder={t("add.ticker")}
           value={symbol}
           onChange={(v) => setSymbol(v.toUpperCase())}
           className="uppercase"
         />
-        <Input placeholder="Shares" value={shares} onChange={setShares} type="number" />
-        <Input placeholder="Avg cost" value={avgCost} onChange={setAvgCost} type="number" />
+        <Input placeholder={t("add.shares")} value={shares} onChange={setShares} type="number" />
+        <Input placeholder={t("add.avgCost")} value={avgCost} onChange={setAvgCost} type="number" />
       </div>
       <div className="flex items-center gap-2">
         <button
           type="submit"
           className="flex-1 rounded-lg bg-up/15 py-2 text-sm font-semibold text-up ring-1 ring-up/30 transition hover:bg-up/25"
         >
-          + Add / Merge position
+          {t("add.button")}
         </button>
         <button
           type="button"
@@ -66,7 +68,7 @@ export function AddShares() {
           disabled={!symbol || busy}
           className="rounded-lg bg-panel-2 px-3 py-2 text-xs text-ink-dim ring-1 ring-border transition hover:text-ink disabled:opacity-50"
         >
-          {busy ? "…" : "Use live $"}
+          {busy ? "…" : t("add.useLive")}
         </button>
       </div>
       {msg && <p className="text-xs text-ink-dim">{msg}</p>}

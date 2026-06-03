@@ -251,6 +251,106 @@ function sum(arr: number[]): number {
 }
 
 // =====================================================================
+//  Actionable recommendations ("what to do next")
+// =====================================================================
+
+export type RecSeverity = "warn" | "info" | "good";
+
+export interface Recommendation {
+  id: string;
+  severity: RecSeverity;
+  /** i18n key in src/i18n.ts */
+  key: string;
+  /** interpolation params for the i18n string */
+  params: Record<string, string | number>;
+}
+
+const TARGET_CONCENTRATION = 30; // % — single-position ceiling we aim for
+
+export function buildRecommendations(stats: PortfolioStats): Recommendation[] {
+  const recs: Recommendation[] = [];
+  if (!stats.positions.length) return recs;
+
+  const byWeight = [...stats.positions].sort((a, b) => b.weight - a.weight);
+  const top = byWeight[0];
+
+  // 1) Over-concentration — tell them exactly how much to trim.
+  if (top && top.weight > TARGET_CONCENTRATION + 1) {
+    const targetValue = (TARGET_CONCENTRATION / 100) * stats.marketValue;
+    const trimAmount = Math.max(0, top.marketValue - targetValue);
+    const price = top.quote?.price ?? top.avgCost;
+    const trimShares = price > 0 ? trimAmount / price : 0;
+    recs.push({
+      id: "trim",
+      severity: "warn",
+      key: "recs.trim",
+      params: {
+        sym: top.symbol,
+        pct: fmtPctPlain(top.weight),
+        target: `${TARGET_CONCENTRATION}%`,
+        amt: fmtMoney(trimAmount),
+        sh: trimShares.toFixed(2),
+      },
+    });
+  }
+
+  // 2) Too few names — diversification.
+  if (stats.positions.length < 4) {
+    recs.push({
+      id: "diversify",
+      severity: "info",
+      key: "recs.diversify",
+      params: { n: stats.positions.length },
+    });
+  }
+
+  // 3) Big loser — review/cut.
+  if (stats.worst && stats.worst.unrealizedPct < -15) {
+    recs.push({
+      id: "cutLoss",
+      severity: "warn",
+      key: "recs.cutLoss",
+      params: {
+        sym: stats.worst.symbol,
+        pct: fmtPctPlain(Math.abs(stats.worst.unrealizedPct)),
+      },
+    });
+  }
+
+  // 4) Big winner — take some profit / rebalance.
+  if (stats.best && stats.best.unrealizedPct > 25) {
+    recs.push({
+      id: "takeProfit",
+      severity: "info",
+      key: "recs.takeProfit",
+      params: { sym: stats.best.symbol, pct: fmtPctPlain(stats.best.unrealizedPct) },
+    });
+  }
+
+  // 5) Big daily swing — behavioural nudge.
+  if (Math.abs(stats.dayChangePct) > 3) {
+    recs.push({
+      id: "dayMove",
+      severity: "info",
+      key: "recs.dayMove",
+      params: { pct: fmtPct(stats.dayChangePct) },
+    });
+  }
+
+  // Nothing pressing → reassuring note.
+  if (!recs.some((r) => r.severity === "warn")) {
+    recs.unshift({
+      id: "balanced",
+      severity: "good",
+      key: "recs.balanced",
+      params: {},
+    });
+  }
+
+  return recs;
+}
+
+// =====================================================================
 //  Formatting helpers
 // =====================================================================
 
@@ -270,6 +370,10 @@ export const fmtNum = (n: number, digits = 2): string =>
 
 export const fmtPct = (n: number, digits = 2): string =>
   `${n >= 0 ? "+" : ""}${n.toFixed(digits)}%`;
+
+// Unsigned percentage — for weights/concentration where a +/- prefix is wrong.
+export const fmtPctPlain = (n: number, digits = 1): string =>
+  `${n.toFixed(digits)}%`;
 
 export const fmtSigned = (n: number, digits = 2): string =>
   `${n >= 0 ? "+" : "-"}${fmtMoney(Math.abs(n), digits)}`;

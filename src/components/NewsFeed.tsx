@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { usePortfolio } from "../context/PortfolioContext";
+import { useUI } from "../context/UIContext";
 import { api } from "../lib/api";
 import type { NewsItem } from "../types";
 import { Panel, Spinner, cn } from "./ui";
 
 export function NewsFeed() {
   const { selectedSymbol, holdings } = usePortfolio();
+  const { t } = useUI();
   const [scope, setScope] = useState<"selected" | "portfolio">("selected");
   const [items, setItems] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,14 +50,14 @@ export function NewsFeed() {
 
   return (
     <Panel
-      title="Market News"
+      title={t("news.title")}
       right={
         <div className="flex items-center gap-1 text-xs">
           <ScopeBtn active={scope === "selected"} onClick={() => setScope("selected")}>
             {selectedSymbol}
           </ScopeBtn>
           <ScopeBtn active={scope === "portfolio"} onClick={() => setScope("portfolio")}>
-            Portfolio
+            {t("news.portfolio")}
           </ScopeBtn>
         </div>
       }
@@ -63,14 +65,14 @@ export function NewsFeed() {
       <div className="max-h-[460px] space-y-1 overflow-y-auto p-2">
         {loading && (
           <div className="p-4">
-            <Spinner label="Fetching news…" />
+            <Spinner label={t("news.loading")} />
           </div>
         )}
         {error && !loading && (
-          <p className="p-4 text-sm text-down">Couldn't load news: {error}</p>
+          <p className="p-4 text-sm text-down">{t("news.error", { err: error })}</p>
         )}
         {!loading && !error && items.length === 0 && (
-          <p className="p-4 text-sm text-ink-dim">No recent headlines found.</p>
+          <p className="p-4 text-sm text-ink-dim">{t("news.empty")}</p>
         )}
         {items.map((n, i) => (
           <a

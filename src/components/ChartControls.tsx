@@ -1,3 +1,4 @@
+import { useUI } from "../context/UIContext";
 import { cn } from "./ui";
 
 export type ChartType = "candles" | "heikin" | "line";
@@ -9,10 +10,6 @@ export interface Overlays {
 }
 
 const RANGES = ["1D", "5D", "1M", "6M", "YTD", "1Y"];
-const SUBS = [
-  { key: "rsi", label: "RSI" },
-  { key: "volume", label: "Volume" },
-] as const;
 
 export function ChartControls({
   range,
@@ -33,6 +30,11 @@ export function ChartControls({
   sub: "rsi" | "volume";
   setSub: (s: "rsi" | "volume") => void;
 }) {
+  const { t } = useUI();
+  const SUBS = [
+    { key: "rsi", label: t("controls.rsi") },
+    { key: "volume", label: t("controls.volume") },
+  ] as const;
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-y border-border px-5 py-2.5 text-xs">
       {/* Ranges */}
@@ -58,13 +60,13 @@ export function ChartControls({
       {/* Chart type */}
       <div className="flex items-center gap-1">
         <TypeBtn active={chartType === "candles"} onClick={() => setChartType("candles")}>
-          Candles
+          {t("controls.candles")}
         </TypeBtn>
         <TypeBtn active={chartType === "heikin"} onClick={() => setChartType("heikin")}>
-          Heikin Ashi
+          {t("controls.heikin")}
         </TypeBtn>
         <TypeBtn active={chartType === "line"} onClick={() => setChartType("line")}>
-          Line
+          {t("controls.line")}
         </TypeBtn>
       </div>
 
@@ -73,19 +75,19 @@ export function ChartControls({
       {/* Overlays */}
       <div className="flex items-center gap-2">
         <Toggle
-          label="S/R Lines"
+          label={t("controls.srLines")}
           color="text-accent-purple"
           on={overlays.sr}
           onClick={() => setOverlays({ ...overlays, sr: !overlays.sr })}
         />
         <Toggle
-          label="Bollinger"
+          label={t("controls.bollinger")}
           color="text-accent-yellow"
           on={overlays.bollinger}
           onClick={() => setOverlays({ ...overlays, bollinger: !overlays.bollinger })}
         />
         <Toggle
-          label="SMA 50"
+          label={t("controls.sma")}
           color="text-accent-blue"
           on={overlays.sma}
           onClick={() => setOverlays({ ...overlays, sma: !overlays.sma })}
@@ -96,7 +98,7 @@ export function ChartControls({
 
       {/* Sub-chart selector */}
       <div className="flex items-center gap-1">
-        <span className="text-ink-dim">Sub:</span>
+        <span className="text-ink-dim">{t("controls.sub")}:</span>
         {SUBS.map((s) => (
           <TypeBtn key={s.key} active={sub === s.key} onClick={() => setSub(s.key)}>
             {s.label}

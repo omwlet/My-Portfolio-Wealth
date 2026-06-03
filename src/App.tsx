@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePortfolio } from "./context/PortfolioContext";
+import { useUI } from "./context/UIContext";
 import { useAssetData } from "./hooks/useAssetData";
 import { deriveLevels } from "./lib/calc";
+import { LANGS } from "./i18n";
 import { AssetHeader } from "./components/AssetHeader";
 import { ChartControls, type ChartType, type Overlays } from "./components/ChartControls";
 import { PriceChart } from "./components/PriceChart";
@@ -10,10 +12,11 @@ import { PositionPanel } from "./components/PositionPanel";
 import { PortfolioOverview } from "./components/PortfolioOverview";
 import { PortfolioAnalysis } from "./components/PortfolioAnalysis";
 import { NewsFeed } from "./components/NewsFeed";
-import { Spinner } from "./components/ui";
+import { Spinner, cn } from "./components/ui";
 
 export default function App() {
-  const { selectedSymbol, quotes, stats, loading } = usePortfolio();
+  const { selectedSymbol, quotes, stats } = usePortfolio();
+  const { theme, t } = useUI();
   const quote = quotes[selectedSymbol];
 
   // Chart UI state
@@ -38,7 +41,6 @@ export default function App() {
   const [resistances, setResistances] = useState<number[]>([0, 0, 0, 0]);
   const levelsSymbol = useRef<string>("");
 
-  // Re-derive S/R baselines whenever we load a *new* symbol's chart.
   useEffect(() => {
     if (!chart || !candles.length) return;
     if (levelsSymbol.current === chart.symbol) return;
@@ -55,7 +57,6 @@ export default function App() {
     setResistances(r);
   };
 
-  // When "use current price" is on, the first entry becomes the live price.
   const effectiveSupports = useMemo(() => {
     if (!useCurrentPrice || !price) return supports;
     return [price, ...supports.slice(1)];
@@ -67,7 +68,7 @@ export default function App() {
 
       <main className="mx-auto max-w-[1600px] space-y-4 px-4 pb-12 pt-4">
         {/* ===== Split screen: chart (2/3) + calculator (1/3) ===== */}
-        <div className="grid gap-4 lg:grid-cols-3">
+        <section id="dashboard" className="grid scroll-mt-20 gap-4 lg:grid-cols-3">
           {/* LEFT 2/3 */}
           <div className="lg:col-span-2 overflow-hidden rounded-xl border border-border bg-panel">
             <AssetHeader quote={quote} symbol={selectedSymbol} />
@@ -84,12 +85,12 @@ export default function App() {
             <div className="relative h-[420px] w-full">
               {chartLoading && (
                 <div className="absolute inset-0 z-10 flex items-center justify-center bg-panel/70">
-                  <Spinner label={`Loading ${selectedSymbol} chart…`} />
+                  <Spinner label={t("chart.loading", { sym: selectedSymbol })} />
                 </div>
               )}
               {error && !chartLoading && (
                 <div className="absolute inset-0 z-10 flex items-center justify-center text-sm text-down">
-                  Chart unavailable: {error}
+                  {t("chart.unavailable", { err: error })}
                 </div>
               )}
               <PriceChart
@@ -98,14 +99,15 @@ export default function App() {
                 overlays={overlays}
                 supports={effectiveSupports}
                 resistances={resistances}
+                theme={theme}
               />
             </div>
             <div className="h-[150px] w-full border-t border-border">
               <div className="px-4 pt-2 text-xs font-semibold text-ink-dim">
-                {sub === "rsi" ? "RSI (14)" : "Volume"}
+                {sub === "rsi" ? `${t("controls.rsi")} (14)` : t("controls.volume")}
               </div>
               <div className="h-[120px] w-full">
-                <SubChart candles={candles} kind={sub} />
+                <SubChart candles={candles} kind={sub} theme={theme} />
               </div>
             </div>
           </div>
@@ -132,49 +134,98 @@ export default function App() {
               onReset={resetLevels}
             />
           </div>
-        </div>
+        </section>
 
         {/* ===== Portfolio management ===== */}
-        <PortfolioOverview />
+        <div id="holdings" className="scroll-mt-20">
+          <PortfolioOverview />
+        </div>
 
         {/* ===== Analysis + News ===== */}
         <div className="grid gap-4 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <PortfolioAnalysis />
           </div>
-          <div className="lg:col-span-1">
+          <div id="news" className="scroll-mt-20 lg:col-span-1">
             <NewsFeed />
           </div>
         </div>
 
         <footer className="pt-2 text-center text-xs text-ink-dim">
-          Live data via Yahoo Finance · {stats.positions.length} positions ·
-          {loading ? " syncing…" : " auto-refresh 60s"} · For research only, not financial
-          advice.
+          {t("footer.text", { n: stats.positions.length })}
         </footer>
       </main>
     </div>
   );
 }
 
+function scrollTo(id: string) {
+  document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 function TopBar() {
+  const { theme, toggleTheme, lang, setLang, t } = useUI();
+  const navItems = [
+    { id: "dashboard", label: t("nav.dashboard") },
+    { id: "holdings", label: t("nav.holdings") },
+    { id: "news", label: t("nav.news") },
+  ];
   return (
     <header className="sticky top-0 z-20 border-b border-border bg-bg/90 backdrop-blur">
-      <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-2">
+      <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3 px-4 py-3">
+        <button
+          onClick={() => scrollTo("dashboard")}
+          className="flex items-center gap-2"
+        >
           <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-up/20 text-up">
             ◆
           </span>
-          <span className="text-lg font-bold tracking-tight">Portfolio Health</span>
+          <span className="text-lg font-bold tracking-tight">{t("brand.title")}</span>
           <span className="ml-1 rounded bg-panel-2 px-1.5 py-0.5 text-[10px] font-semibold text-ink-dim">
-            LIVE
+            {t("badge.live")}
           </span>
+        </button>
+
+        <div className="flex items-center gap-2">
+          <nav className="hidden gap-1 text-sm sm:flex">
+            {navItems.map((n) => (
+              <button
+                key={n.id}
+                onClick={() => scrollTo(n.id)}
+                className="rounded-md px-3 py-1.5 text-ink-dim transition-colors hover:bg-panel-2 hover:text-ink"
+              >
+                {n.label}
+              </button>
+            ))}
+          </nav>
+
+          {/* Language switch */}
+          <div className="flex items-center rounded-lg border border-border bg-panel-2 p-0.5 text-xs">
+            {LANGS.map((l) => (
+              <button
+                key={l.code}
+                onClick={() => setLang(l.code)}
+                className={cn(
+                  "rounded-md px-2 py-1 font-semibold transition-colors",
+                  lang === l.code
+                    ? "bg-accent-blue/20 text-accent-blue"
+                    : "text-ink-dim hover:text-ink"
+                )}
+              >
+                {l.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Theme toggle */}
+          <button
+            onClick={toggleTheme}
+            title={theme === "dark" ? t("settings.light") : t("settings.dark")}
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-panel-2 text-ink-dim transition-colors hover:text-ink"
+          >
+            {theme === "dark" ? "☀" : "☾"}
+          </button>
         </div>
-        <nav className="hidden gap-6 text-sm text-ink-dim sm:flex">
-          <span className="text-ink">Dashboard</span>
-          <span>Holdings</span>
-          <span>News</span>
-        </nav>
       </div>
     </header>
   );

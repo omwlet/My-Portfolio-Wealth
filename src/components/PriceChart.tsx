@@ -16,18 +16,36 @@ import type { ChartType, Overlays } from "./ChartControls";
 const SUPPORT_COLORS = ["#a974ff", "#4f9bff", "#16c784"]; // purple, blue, green
 const RESISTANCE_COLORS = ["#ff4fa3", "#ff4d6d", "#ffcf3f", "#ff8a3f"]; // pinks/yellow
 
+export function chartTheme(theme: "dark" | "light") {
+  return theme === "light"
+    ? {
+        bg: "#ffffff",
+        text: "#5b6473",
+        grid: "rgba(0,0,0,0.06)",
+        border: "#dfe3ea",
+      }
+    : {
+        bg: "#121212",
+        text: "#8b8f9a",
+        grid: "rgba(255,255,255,0.05)",
+        border: "#24262d",
+      };
+}
+
 export function PriceChart({
   candles,
   chartType,
   overlays,
   supports,
   resistances,
+  theme,
 }: {
   candles: Candle[];
   chartType: ChartType;
   overlays: Overlays;
   supports: number[];
   resistances: number[];
+  theme: "dark" | "light";
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -38,23 +56,24 @@ export function PriceChart({
   // --- create chart once ---
   useEffect(() => {
     if (!containerRef.current) return;
+    const c = chartTheme(theme);
     const chart = createChart(containerRef.current, {
       layout: {
-        background: { type: ColorType.Solid, color: "#121212" },
-        textColor: "#8b8f9a",
+        background: { type: ColorType.Solid, color: c.bg },
+        textColor: c.text,
         fontFamily: "ui-sans-serif, system-ui, sans-serif",
       },
       grid: {
-        vertLines: { color: "rgba(255,255,255,0.04)" },
-        horzLines: { color: "rgba(255,255,255,0.05)" },
+        vertLines: { color: c.grid },
+        horzLines: { color: c.grid },
       },
       crosshair: {
         mode: CrosshairMode.Normal,
         vertLine: { color: "#4f9bff", width: 1, style: LineStyle.Dashed },
         horzLine: { color: "#4f9bff", width: 1, style: LineStyle.Dashed },
       },
-      rightPriceScale: { borderColor: "#24262d" },
-      timeScale: { borderColor: "#24262d", timeVisible: true, secondsVisible: false },
+      rightPriceScale: { borderColor: c.border },
+      timeScale: { borderColor: c.border, timeVisible: true, secondsVisible: false },
       autoSize: true,
     });
     chartRef.current = chart;
@@ -67,6 +86,19 @@ export function PriceChart({
       priceLinesRef.current = [];
     };
   }, []);
+
+  // --- re-theme on light/dark toggle ---
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    const c = chartTheme(theme);
+    chart.applyOptions({
+      layout: { background: { type: ColorType.Solid, color: c.bg }, textColor: c.text },
+      grid: { vertLines: { color: c.grid }, horzLines: { color: c.grid } },
+      rightPriceScale: { borderColor: c.border },
+      timeScale: { borderColor: c.border },
+    });
+  }, [theme]);
 
   // --- (re)build main series + overlays when type/data/overlays change ---
   useEffect(() => {
