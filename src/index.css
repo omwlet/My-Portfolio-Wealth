@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+/* ----- Portfolio Health design tokens (TradingView-inspired dark theme) ----- */
+@theme {
+  --color-bg: #0c0c0e;
+  --color-panel: #121212;
+  --color-panel-2: #17181c;
+  --color-border: #24262d;
+  --color-ink: #e8e9ed;
+  --color-ink-dim: #8b8f9a;
+
+  --color-up: #00e08a;      /* neon green - positive */
+  --color-up-soft: #16c784;
+  --color-down: #ff4d6d;    /* pink/red - negative */
+  --color-down-soft: #ff5c7a;
+
+  --color-accent-purple: #a974ff;
+  --color-accent-pink: #ff4fa3;
+  --color-accent-yellow: #ffcf3f;
+  --color-accent-blue: #4f9bff;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Numeric tabular alignment for prices */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Thin custom scrollbars to match the dark UI */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a2c34;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}

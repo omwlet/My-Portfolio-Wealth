@@ -1,0 +1,15 @@
+# Render Blueprint — one free web service that builds the React app
+# and serves it together with the API. https://render.com
+services:
+  - type: web
+    name: portfolio-health
+    runtime: node
+    plan: free
+    # --include=dev forces build tools (vite/tsc/tailwind) to install even
+    # though NODE_ENV=production would otherwise skip devDependencies.
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
