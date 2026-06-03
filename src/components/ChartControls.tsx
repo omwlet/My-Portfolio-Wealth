@@ -9,7 +9,7 @@ export interface Overlays {
   sma: boolean;
 }
 
-const RANGES = ["1D", "5D", "1M", "6M", "YTD", "1Y"];
+const RANGES = ["1m", "5m", "15m", "4H", "1D", "5D", "1M", "6M", "YTD", "1Y"];
 
 export function ChartControls({
   range,

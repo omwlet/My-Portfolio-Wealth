@@ -27,7 +27,12 @@ export const api = {
 };
 
 // Maps a UI range button to Yahoo's {range, interval} pair.
+// "4h" is synthetic — the backend fetches 1h bars and aggregates them.
 export const RANGE_PRESETS: Record<string, { range: string; interval: string }> = {
+  "1m": { range: "1d", interval: "1m" },
+  "5m": { range: "5d", interval: "5m" },
+  "15m": { range: "1mo", interval: "15m" },
+  "4H": { range: "3mo", interval: "4h" },
   "1D": { range: "1d", interval: "5m" },
   "5D": { range: "5d", interval: "30m" },
   "1M": { range: "1mo", interval: "1d" },

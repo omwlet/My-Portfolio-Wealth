@@ -37,17 +37,39 @@ async function yfetch(path) {
   throw lastErr ?? new Error("Yahoo fetch failed");
 }
 
+// Aggregate fine candles into fixed-width buckets (e.g. 1h -> 4h).
+function aggregateCandles(candles, bucketSeconds) {
+  const buckets = new Map();
+  for (const c of candles) {
+    const key = Math.floor(c.time / bucketSeconds) * bucketSeconds;
+    const b = buckets.get(key);
+    if (!b) {
+      buckets.set(key, { ...c, time: key });
+    } else {
+      b.high = Math.max(b.high, c.high);
+      b.low = Math.min(b.low, c.low);
+      b.close = c.close;
+      b.volume += c.volume;
+    }
+  }
+  return Array.from(buckets.values()).sort((a, b) => a.time - b.time);
+}
+
 // ---- Chart / candles -------------------------------------------------
 async function getChart(symbol, range = "6mo", interval = "1d") {
+  // Yahoo has no native 4h interval: fetch 1h and aggregate to 4h buckets.
+  const aggregate4h = interval === "4h";
+  const fetchInterval = aggregate4h ? "1h" : interval;
+
   const data = await yfetch(
-    `/v8/finance/chart/${encodeURIComponent(symbol)}?range=${range}&interval=${interval}&includePrePost=false`
+    `/v8/finance/chart/${encodeURIComponent(symbol)}?range=${range}&interval=${fetchInterval}&includePrePost=false`
   );
   const result = data?.chart?.result?.[0];
   if (!result) throw new Error("No chart data");
   const meta = result.meta ?? {};
   const ts = result.timestamp ?? [];
   const q = result.indicators?.quote?.[0] ?? {};
-  const candles = [];
+  let candles = [];
   for (let i = 0; i < ts.length; i++) {
     const o = q.open?.[i];
     const h = q.high?.[i];
@@ -63,6 +85,7 @@ async function getChart(symbol, range = "6mo", interval = "1d") {
       volume: q.volume?.[i] ?? 0,
     });
   }
+  if (aggregate4h) candles = aggregateCandles(candles, 4 * 3600);
   return { meta, candles };
 }
 
