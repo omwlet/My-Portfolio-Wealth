@@ -2,6 +2,7 @@ import { fmtMoney } from "../lib/calc";
 import { useUI } from "../context/UIContext";
 import { Panel, cn } from "./ui";
 import { SRMatrix } from "./SRMatrix";
+import { AveragingTable } from "./AveragingTable";
 
 export function PositionPanel({
   symbol,
@@ -17,6 +18,8 @@ export function PositionPanel({
   setSupport,
   setResistance,
   onReset,
+  heldShares,
+  heldAvgCost,
 }: {
   symbol: string;
   currentPrice: number;
@@ -31,6 +34,8 @@ export function PositionPanel({
   setSupport: (i: number, v: number) => void;
   setResistance: (i: number, v: number) => void;
   onReset: () => void;
+  heldShares: number;
+  heldAvgCost: number;
 }) {
   const { t } = useUI();
   return (
@@ -117,6 +122,20 @@ export function PositionPanel({
         <p className="text-[11px] leading-relaxed text-ink-dim">
           {t("calc.help", { amt: fmtMoney(investment) })}
         </p>
+
+        {/* Average-down helper — only when this ticker is a held position */}
+        {heldShares > 0 ? (
+          <AveragingTable
+            shares={heldShares}
+            avgCost={heldAvgCost}
+            amount={investment}
+            supports={supports}
+          />
+        ) : (
+          <p className="rounded-lg border border-dashed border-border px-3 py-2 text-[11px] text-ink-dim">
+            {t("avg.none")}
+          </p>
+        )}
       </div>
     </Panel>
   );

@@ -30,6 +30,7 @@ export function PortfolioOverview() {
                 <th className="py-2 pr-2">{t("holdings.symbol")}</th>
                 <th className="py-2 px-2 text-right">{t("holdings.shares")}</th>
                 <th className="py-2 px-2 text-right">{t("holdings.avgCost")}</th>
+                <th className="py-2 px-2 text-right">{t("holdings.invested")}</th>
                 <th className="py-2 px-2 text-right">{t("holdings.price")}</th>
                 <th className="py-2 px-2 text-right">{t("holdings.mktValue")}</th>
                 <th className="py-2 px-2 text-right">{t("holdings.unrealized")}</th>
@@ -58,6 +59,9 @@ export function PortfolioOverview() {
                     </td>
                     <td className="tnum px-2 text-right">{p.shares}</td>
                     <td className="tnum px-2 text-right">{fmtMoney(p.avgCost)}</td>
+                    <td className="tnum px-2 text-right font-semibold">
+                      {fmtMoney(p.costBasis)}
+                    </td>
                     <td className="tnum px-2 text-right">
                       {p.quote ? fmtMoney(p.quote.price) : "—"}
                     </td>
@@ -93,7 +97,7 @@ export function PortfolioOverview() {
               })}
               {!positions.length && (
                 <tr>
-                  <td colSpan={8} className="py-6 text-center text-ink-dim">
+                  <td colSpan={9} className="py-6 text-center text-ink-dim">
                     {t("holdings.empty")}
                   </td>
                 </tr>

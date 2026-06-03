@@ -59,6 +59,24 @@ export default function App() {
     setResistances(r);
   };
 
+  // The selected stock's holding (if we own it).
+  const held = useMemo(
+    () => stats.positions.find((p) => p.symbol === selectedSymbol),
+    [stats, selectedSymbol]
+  );
+
+  // Sync the calculator's Investment Amount to our cost basis in the selected
+  // stock (once per symbol, unless the amount is locked).
+  const investmentSymbol = useRef("");
+  useEffect(() => {
+    if (locked) return;
+    if (investmentSymbol.current === selectedSymbol) return;
+    if (held && held.costBasis > 0) {
+      setInvestment(+held.costBasis.toFixed(2));
+      investmentSymbol.current = selectedSymbol;
+    }
+  }, [selectedSymbol, held, locked]);
+
   const effectiveSupports = useMemo(() => {
     if (!useCurrentPrice || !price) return supports;
     return [price, ...supports.slice(1)];
@@ -134,6 +152,8 @@ export default function App() {
                 setResistances((prev) => prev.map((x, idx) => (idx === i ? v : x)))
               }
               onReset={resetLevels}
+              heldShares={held?.shares ?? 0}
+              heldAvgCost={held?.avgCost ?? 0}
             />
           </div>
         </section>

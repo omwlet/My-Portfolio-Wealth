@@ -51,10 +51,52 @@ export function buildMatrix(
   );
 }
 
+// =====================================================================
+//  Cost-averaging ("buy more / average down") helper
+// =====================================================================
+
+export interface AvgRow {
+  level: number; // support price you'd buy more at
+  addAmount: number; // dollars added at this level
+  addShares: number; // shares that buys
+  newShares: number; // resulting total shares
+  newAvg: number; // resulting blended average cost
+  averagingDown: boolean; // true if new avg is below current avg
+}
+
+/**
+ * For a held position, compute the new blended average cost if you invest
+ * `addAmount` more dollars at each price level.
+ *   addShares = addAmount / level
+ *   newAvg    = (curShares*curAvg + addAmount) / (curShares + addShares)
+ */
+export function buildAveraging(
+  currentShares: number,
+  currentAvg: number,
+  addAmount: number,
+  levels: number[]
+): AvgRow[] {
+  return levels.map((level) => {
+    const addShares = level > 0 ? addAmount / level : 0;
+    const newShares = currentShares + addShares;
+    const newAvg =
+      newShares > 0
+        ? (currentShares * currentAvg + addAmount) / newShares
+        : currentAvg;
+    return {
+      level,
+      addAmount,
+      addShares,
+      newShares,
+      newAvg,
+      averagingDown: newAvg < currentAvg,
+    };
+  });
+}
+
 /**
  * Derive default support/resistance levels from recent price action.
- * Uses the classic floor-trader pivot plus a swing high/low envelope so the
- * three supports sit below price and four resistances sit above it.
+ * Uses the full loaded window so levels reflect the selected timeframe.
  */
 export function deriveLevels(
   candles: Candle[],

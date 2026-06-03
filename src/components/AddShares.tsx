@@ -8,8 +8,8 @@ export function AddShares() {
   const { addHolding } = usePortfolio();
   const { t } = useUI();
   const [symbol, setSymbol] = useState("");
-  const [shares, setShares] = useState("");
-  const [avgCost, setAvgCost] = useState("");
+  const [amount, setAmount] = useState(""); // dollars invested
+  const [price, setPrice] = useState(""); // buy price (avg cost)
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -19,7 +19,7 @@ export function AddShares() {
     setMsg(null);
     try {
       const q = await api.quote(symbol.toUpperCase());
-      setAvgCost(String(q.price));
+      setPrice(String(q.price));
       setMsg(`${q.symbol}: $${q.price}`);
     } catch {
       setMsg(t("add.errFetch"));
@@ -30,18 +30,33 @@ export function AddShares() {
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    const sh = Number(shares);
-    const ac = Number(avgCost);
-    if (!symbol.trim() || !(sh > 0) || !(ac > 0)) {
+    const amt = Number(amount);
+    const px = Number(price);
+    if (!symbol.trim() || !(amt > 0) || !(px > 0)) {
       setMsg(t("add.errInputs"));
       return;
     }
-    addHolding({ symbol: symbol.toUpperCase().trim(), shares: sh, avgCost: ac });
-    setMsg(t("add.added", { sh, sym: symbol.toUpperCase(), ac }));
+    // Dollars invested -> fractional shares at the given price.
+    const shares = +(amt / px).toFixed(6);
+    addHolding({ symbol: symbol.toUpperCase().trim(), shares, avgCost: px });
+    setMsg(
+      t("add.added", {
+        amt: amt.toFixed(2),
+        sym: symbol.toUpperCase(),
+        price: px.toFixed(2),
+        sh: shares,
+      })
+    );
     setSymbol("");
-    setShares("");
-    setAvgCost("");
+    setAmount("");
+    setPrice("");
   };
+
+  // Live preview of how many shares the entered $ buys.
+  const previewShares =
+    Number(amount) > 0 && Number(price) > 0
+      ? (Number(amount) / Number(price)).toFixed(4)
+      : null;
 
   return (
     <form onSubmit={submit} className="space-y-2">
@@ -52,25 +67,36 @@ export function AddShares() {
           onChange={(v) => setSymbol(v.toUpperCase())}
           className="uppercase"
         />
-        <Input placeholder={t("add.shares")} value={shares} onChange={setShares} type="number" />
-        <Input placeholder={t("add.avgCost")} value={avgCost} onChange={setAvgCost} type="number" />
+        <Input
+          placeholder={t("add.amount")}
+          value={amount}
+          onChange={setAmount}
+          type="number"
+        />
+        <div className="relative">
+          <Input placeholder={t("add.price")} value={price} onChange={setPrice} type="number" />
+          <button
+            type="button"
+            onClick={fillLivePrice}
+            disabled={!symbol || busy}
+            title={t("add.useLive")}
+            className="absolute right-1 top-1/2 -translate-y-1/2 rounded bg-panel px-1.5 py-0.5 text-[10px] text-ink-dim ring-1 ring-border hover:text-ink disabled:opacity-50"
+          >
+            {busy ? "…" : "$"}
+          </button>
+        </div>
       </div>
-      <div className="flex items-center gap-2">
-        <button
-          type="submit"
-          className="flex-1 rounded-lg bg-up/15 py-2 text-sm font-semibold text-up ring-1 ring-up/30 transition hover:bg-up/25"
-        >
-          {t("add.button")}
-        </button>
-        <button
-          type="button"
-          onClick={fillLivePrice}
-          disabled={!symbol || busy}
-          className="rounded-lg bg-panel-2 px-3 py-2 text-xs text-ink-dim ring-1 ring-border transition hover:text-ink disabled:opacity-50"
-        >
-          {busy ? "…" : t("add.useLive")}
-        </button>
-      </div>
+      <button
+        type="submit"
+        className="w-full rounded-lg bg-up/15 py-2 text-sm font-semibold text-up ring-1 ring-up/30 transition hover:bg-up/25"
+      >
+        {t("add.button")}
+      </button>
+      {previewShares && !msg && (
+        <p className="text-xs text-ink-dim">
+          ≈ {previewShares} {t("add.shares").toLowerCase()}
+        </p>
+      )}
       {msg && <p className="text-xs text-ink-dim">{msg}</p>}
     </form>
   );
