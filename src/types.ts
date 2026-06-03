@@ -46,6 +46,7 @@ export interface ChartPayload {
 
 export interface NewsItem {
   title: string;
+  titleOriginal?: string;
   link: string;
   publisher: string;
   published: string; // ISO

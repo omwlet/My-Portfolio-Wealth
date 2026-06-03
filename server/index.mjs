@@ -101,6 +101,30 @@ const NAMES = {
   ISRG: "Intuitive Surgical, Inc.",
 };
 
+// ---- Translation (free Google endpoint, cached, best-effort) ---------
+const translateCache = new Map(); // `${lang}:${text}` -> translated
+
+async function translateText(text, target) {
+  if (!text || target === "en") return text;
+  const key = `${target}:${text}`;
+  if (translateCache.has(key)) return translateCache.get(key);
+  try {
+    const url =
+      `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${target}` +
+      `&dt=t&q=${encodeURIComponent(text)}`;
+    const res = await fetch(url, { headers: YH_HEADERS, signal: AbortSignal.timeout(6000) });
+    if (!res.ok) throw new Error(String(res.status));
+    const data = await res.json();
+    // data[0] is an array of [translatedSegment, originalSegment, ...]
+    const out = (data?.[0] ?? []).map((seg) => seg?.[0] ?? "").join("");
+    const result = out || text;
+    translateCache.set(key, result);
+    return result;
+  } catch {
+    return text; // fall back to the original headline
+  }
+}
+
 // ---- Routes ----------------------------------------------------------
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
@@ -157,13 +181,23 @@ app.get("/api/news", async (req, res) => {
   try {
     const symbol = req.query.symbol ? String(req.query.symbol) : "";
     const limit = Math.min(Number(req.query.limit ?? 12), 30);
+    const lang = String(req.query.lang ?? "en");
     // Yahoo search endpoint returns a clean news[] array.
     const q = symbol || "stock market";
     const data = await yfetch(
       `/v1/finance/search?q=${encodeURIComponent(q)}&newsCount=${limit}&quotesCount=0&enableFuzzyQuery=false`
     );
-    const items = (data?.news ?? []).slice(0, limit).map((n) => ({
-      title: n.title,
+    const raw = (data?.news ?? []).slice(0, limit);
+
+    // Optionally translate the (English) headlines into the UI language.
+    const titles =
+      lang === "en"
+        ? raw.map((n) => n.title)
+        : await Promise.all(raw.map((n) => translateText(n.title, lang)));
+
+    const items = raw.map((n, i) => ({
+      title: titles[i],
+      titleOriginal: n.title,
       link: n.link,
       publisher: n.publisher ?? "Yahoo Finance",
       published: n.providerPublishTime

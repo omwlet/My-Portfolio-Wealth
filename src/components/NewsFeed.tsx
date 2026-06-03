@@ -7,7 +7,7 @@ import { Panel, Spinner, cn } from "./ui";
 
 export function NewsFeed() {
   const { selectedSymbol, holdings } = usePortfolio();
-  const { t } = useUI();
+  const { t, lang } = useUI();
   const [scope, setScope] = useState<"selected" | "portfolio">("selected");
   const [items, setItems] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,14 +21,14 @@ export function NewsFeed() {
     async function run() {
       try {
         if (scope === "selected") {
-          const { items } = await api.news(selectedSymbol, 12);
+          const { items } = await api.news(selectedSymbol, 12, lang);
           if (!cancelled) setItems(items);
         } else {
           // Portfolio scope: pull a few per holding and merge by recency.
           const syms = Array.from(new Set(holdings.map((h) => h.symbol))).slice(0, 6);
           const lists = await Promise.all(
             syms.map((s) =>
-              api.news(s, 4).then((r) => r.items).catch(() => [] as NewsItem[])
+              api.news(s, 4, lang).then((r) => r.items).catch(() => [] as NewsItem[])
             )
           );
           const merged = dedupe(lists.flat()).sort(
@@ -46,7 +46,7 @@ export function NewsFeed() {
     return () => {
       cancelled = true;
     };
-  }, [scope, selectedSymbol, holdings]);
+  }, [scope, selectedSymbol, holdings, lang]);
 
   return (
     <Panel
@@ -83,7 +83,12 @@ export function NewsFeed() {
             className="block rounded-lg px-3 py-2.5 transition-colors hover:bg-panel-2"
           >
             <div className="flex items-start justify-between gap-3">
-              <span className="text-sm font-medium leading-snug text-ink">{n.title}</span>
+              <span
+                className="text-sm font-medium leading-snug text-ink"
+                title={n.titleOriginal && n.titleOriginal !== n.title ? n.titleOriginal : undefined}
+              >
+                {n.title}
+              </span>
               {n.symbol && (
                 <span className="shrink-0 rounded bg-accent-blue/15 px-1.5 py-0.5 text-[10px] font-semibold text-accent-blue">
                   {n.symbol}

@@ -20,9 +20,9 @@ export const api = {
       `/api/chart/${encodeURIComponent(symbol)}?range=${range}&interval=${interval}`
     ),
 
-  news: (symbol?: string, limit = 12) =>
+  news: (symbol?: string, limit = 12, lang = "en") =>
     json<{ items: NewsItem[] }>(
-      `/api/news?${symbol ? `symbol=${encodeURIComponent(symbol)}&` : ""}limit=${limit}`
+      `/api/news?${symbol ? `symbol=${encodeURIComponent(symbol)}&` : ""}limit=${limit}&lang=${lang}`
     ),
 };
 
