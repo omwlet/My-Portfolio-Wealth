@@ -60,37 +60,34 @@ export function deriveLevels(
   candles: Candle[],
   currentPrice: number
 ): { supports: number[]; resistances: number[] } {
+  const p = currentPrice || candles[candles.length - 1]?.close || 100;
   if (!candles.length) {
     // Fallback: simple percentage bands around the current price.
-    const p = currentPrice || 100;
     return {
       supports: [p * 0.97, p * 0.93, p * 0.88].map(round2),
       resistances: [p * 1.03, p * 1.07, p * 1.12, p * 1.18].map(round2),
     };
   }
 
-  const window = candles.slice(-60);
-  const highs = window.map((c) => c.high);
-  const lows = window.map((c) => c.low);
-  const swingHigh = Math.max(...highs);
-  const swingLow = Math.min(...lows);
-  const last = window[window.length - 1];
-  const pivot = (last.high + last.low + last.close) / 3;
-  const range = swingHigh - swingLow || currentPrice * 0.1;
+  // Use the FULL loaded window so the levels reflect the selected timeframe:
+  // a 1Y view spans its 52-week range, a 1M view stays tight.
+  const swingHigh = Math.max(...candles.map((c) => c.high));
+  const swingLow = Math.min(...candles.map((c) => c.low));
 
-  const supports = [
-    Math.min(pivot - range * 0.25, currentPrice * 0.985),
-    pivot - range * 0.5,
-    swingLow,
-  ]
+  // Distance from price down to the period low / up to the period high, with a
+  // floor (6% of price) so levels never collapse when price sits at an extreme.
+  const lowGap = Math.max(p - swingLow, p * 0.06);
+  const highGap = Math.max(swingHigh - p, p * 0.06);
+
+  const supports = [p - lowGap * 0.33, p - lowGap * 0.66, p - lowGap]
     .map(round2)
     .sort((a, b) => b - a);
 
   const resistances = [
-    Math.max(pivot + range * 0.25, currentPrice * 1.015),
-    pivot + range * 0.5,
-    swingHigh,
-    swingHigh + range * 0.25,
+    p + highGap * 0.33,
+    p + highGap * 0.66,
+    p + highGap,
+    p + highGap * 1.4,
   ]
     .map(round2)
     .sort((a, b) => a - b);

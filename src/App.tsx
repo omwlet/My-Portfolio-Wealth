@@ -39,15 +39,17 @@ export default function App() {
   const [useCurrentPrice, setUseCurrentPrice] = useState(false);
   const [supports, setSupports] = useState<number[]>([0, 0, 0]);
   const [resistances, setResistances] = useState<number[]>([0, 0, 0, 0]);
-  const levelsSymbol = useRef<string>("");
+  // Key on symbol + timeframe so S/R re-derive when EITHER changes.
+  const levelsKey = useRef<string>("");
 
   useEffect(() => {
     if (!chart || !candles.length) return;
-    if (levelsSymbol.current === chart.symbol) return;
+    const key = `${chart.symbol}:${chart.range}`;
+    if (levelsKey.current === key) return;
     const { supports: s, resistances: r } = deriveLevels(candles, price || chart.meta.price);
     setSupports(s);
     setResistances(r);
-    levelsSymbol.current = chart.symbol;
+    levelsKey.current = key;
   }, [chart, candles, price]);
 
   const resetLevels = () => {
