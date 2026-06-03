@@ -13,7 +13,8 @@ import { enrichHoldings } from "../lib/calc";
 import { SEED_HOLDINGS } from "../data/seed";
 import type { Holding, PortfolioStats, Quote } from "../types";
 
-const STORAGE_KEY = "portfolio-health.holdings.v1";
+// v2: seed figures are USD invested -> shares = usd / avgCost (re-seed needed).
+const STORAGE_KEY = "portfolio-health.holdings.v2";
 
 interface PortfolioContextValue {
   holdings: Holding[];
