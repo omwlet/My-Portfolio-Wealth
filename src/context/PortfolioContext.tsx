@@ -15,6 +15,7 @@ import type { Holding, PortfolioStats, Quote } from "../types";
 
 // v2: seed figures are USD invested -> shares = usd / avgCost (re-seed needed).
 const STORAGE_KEY = "portfolio-health.holdings.v2";
+const CASH_KEY = "portfolio-health.cash.v1";
 
 interface PortfolioContextValue {
   holdings: Holding[];
@@ -27,6 +28,9 @@ interface PortfolioContextValue {
   addHolding: (h: Omit<Holding, "id">) => void;
   updateHolding: (id: string, patch: Partial<Holding>) => void;
   removeHolding: (id: string) => void;
+  cash: number;
+  setCash: (n: number) => void;
+  addCash: (n: number) => void;
   refresh: () => void;
 }
 
@@ -42,8 +46,15 @@ function loadHoldings(): Holding[] {
   return SEED_HOLDINGS;
 }
 
+function loadCash(): number {
+  const raw = localStorage.getItem(CASH_KEY);
+  const n = raw ? Number(raw) : 0;
+  return Number.isFinite(n) ? n : 0;
+}
+
 export function PortfolioProvider({ children }: { children: ReactNode }) {
   const [holdings, setHoldings] = useState<Holding[]>(loadHoldings);
+  const [cash, setCashState] = useState<number>(loadCash);
   const [quotes, setQuotes] = useState<Record<string, Quote>>({});
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -52,10 +63,19 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
   );
   const timer = useRef<number | null>(null);
 
-  // Persist holdings.
+  // Persist holdings + cash.
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(holdings));
   }, [holdings]);
+  useEffect(() => {
+    localStorage.setItem(CASH_KEY, String(cash));
+  }, [cash]);
+
+  const setCash = useCallback((n: number) => setCashState(Math.max(0, n || 0)), []);
+  const addCash = useCallback(
+    (n: number) => setCashState((c) => Math.max(0, c + (n || 0))),
+    []
+  );
 
   // Poll quotes for all holdings + whatever symbol is currently being viewed
   // (so a searched, non-held ticker still gets a live header quote).
@@ -135,7 +155,10 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     setHoldings((prev) => prev.filter((p) => p.id !== id));
   }, []);
 
-  const stats = useMemo(() => enrichHoldings(holdings, quotes), [holdings, quotes]);
+  const stats = useMemo(
+    () => enrichHoldings(holdings, quotes, cash),
+    [holdings, quotes, cash]
+  );
 
   const value: PortfolioContextValue = {
     holdings,
@@ -148,6 +171,9 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     addHolding,
     updateHolding,
     removeHolding,
+    cash,
+    setCash,
+    addCash,
     refresh,
   };
 

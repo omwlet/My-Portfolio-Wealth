@@ -44,6 +44,13 @@ export interface ChartPayload {
   };
 }
 
+export interface SearchResult {
+  symbol: string;
+  name: string;
+  exchange: string;
+  type: string; // EQUITY, ETF, INDEX, CRYPTOCURRENCY, CURRENCY...
+}
+
 export interface NewsItem {
   title: string;
   titleOriginal?: string;
@@ -66,8 +73,9 @@ export interface EnrichedHolding extends Holding {
 }
 
 export interface PortfolioStats {
-  marketValue: number;
-  costBasis: number;
+  marketValue: number; // includes cash
+  investedValue: number; // market value of stocks only (excludes cash)
+  costBasis: number; // stock cost basis + cash
   unrealized: number;
   unrealizedPct: number;
   dayChange: number;
@@ -76,4 +84,6 @@ export interface PortfolioStats {
   best?: EnrichedHolding;
   worst?: EnrichedHolding;
   concentration: number; // largest single-position weight %
+  cash: number;
+  cashWeight: number; // cash as % of total value
 }

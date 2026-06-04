@@ -1,7 +1,8 @@
-import type { ChartPayload, NewsItem, Quote } from "../types";
+import type { ChartPayload, NewsItem, Quote, SearchResult } from "../types";
 
 const json = async <T>(url: string): Promise<T> => {
-  const res = await fetch(url);
+  // no-store so live polls always hit the network, never a stale browser cache.
+  const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) {
     const body = await res.text().catch(() => "");
     throw new Error(`${res.status} ${res.statusText} ${body}`.trim());
@@ -22,6 +23,9 @@ export const api = {
 
   fx: (code: string) =>
     json<{ code: string; rate: number }>(`/api/fx?to=${encodeURIComponent(code)}`),
+
+  search: (q: string) =>
+    json<{ results: SearchResult[] }>(`/api/search?q=${encodeURIComponent(q)}`),
 
   news: (symbol?: string, limit = 12, lang = "en") =>
     json<{ items: NewsItem[] }>(

@@ -232,7 +232,8 @@ export function toHeikinAshi(candles: Candle[]): Candle[] {
 
 export function enrichHoldings(
   holdings: Holding[],
-  quotes: Record<string, Quote>
+  quotes: Record<string, Quote>,
+  cash = 0
 ): PortfolioStats {
   const positions: EnrichedHolding[] = holdings.map((h) => {
     const quote = quotes[h.symbol];
@@ -254,17 +255,21 @@ export function enrichHoldings(
     };
   });
 
-  const marketValue = sum(positions.map((p) => p.marketValue));
-  const costBasis = sum(positions.map((p) => p.costBasis));
-  const unrealized = marketValue - costBasis;
-  const unrealizedPct = costBasis > 0 ? (unrealized / costBasis) * 100 : 0;
+  const investedValue = sum(positions.map((p) => p.marketValue)); // stocks only
+  const stockCost = sum(positions.map((p) => p.costBasis));
+  const marketValue = investedValue + cash; // total portfolio incl. cash
+  const costBasis = stockCost + cash;
+  const unrealized = investedValue - stockCost; // cash has no P/L
+  const unrealizedPct = stockCost > 0 ? (unrealized / stockCost) * 100 : 0;
   const dayChange = sum(positions.map((p) => p.dayChange));
   const prevValue = marketValue - dayChange;
   const dayChangePct = prevValue > 0 ? (dayChange / prevValue) * 100 : 0;
 
+  // Weights are against total value (so cash dilutes single-stock concentration).
   for (const p of positions) {
     p.weight = marketValue > 0 ? (p.marketValue / marketValue) * 100 : 0;
   }
+  const cashWeight = marketValue > 0 ? (cash / marketValue) * 100 : 0;
 
   const byPnl = [...positions].sort((a, b) => b.unrealizedPct - a.unrealizedPct);
   const concentration = positions.length
@@ -273,6 +278,7 @@ export function enrichHoldings(
 
   return {
     marketValue,
+    investedValue,
     costBasis,
     unrealized,
     unrealizedPct,
@@ -282,6 +288,8 @@ export function enrichHoldings(
     best: byPnl[0],
     worst: byPnl[byPnl.length - 1],
     concentration,
+    cash,
+    cashWeight,
   };
 }
 

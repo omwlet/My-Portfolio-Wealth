@@ -45,6 +45,25 @@ export function PortfolioAnalysis() {
   const sorted = [...positions].sort((a, b) => b.weight - a.weight);
   const recs = buildRecommendations(stats);
 
+  // Allocation slices = positions (+ cash if any).
+  type AllocItem = { id: string; symbol: string; marketValue: number; weight: number; color: string };
+  const allocItems: AllocItem[] = sorted.map((p, i) => ({
+    id: p.id,
+    symbol: p.symbol,
+    marketValue: p.marketValue,
+    weight: p.weight,
+    color: ALLOC_COLORS[i % ALLOC_COLORS.length],
+  }));
+  if (stats.cash > 0) {
+    allocItems.push({
+      id: "cash",
+      symbol: t("holdings.cash"),
+      marketValue: stats.cash,
+      weight: stats.cashWeight,
+      color: "#9aa0ab",
+    });
+  }
+
   return (
     <Panel title={t("analysis.title")}>
       <div className="grid gap-4 p-4 lg:grid-cols-[1fr_1fr_1.3fr]">
@@ -115,23 +134,20 @@ export function PortfolioAnalysis() {
         <div>
           <div className="mb-2 text-xs text-ink-dim">{t("analysis.allocation")}</div>
           <div className="mb-3 flex h-3 w-full overflow-hidden rounded-full bg-panel-2">
-            {sorted.map((p, i) => (
+            {allocItems.map((p) => (
               <div
                 key={p.id}
                 title={`${p.symbol} ${p.weight.toFixed(1)}%`}
-                style={{
-                  width: `${p.weight}%`,
-                  background: ALLOC_COLORS[i % ALLOC_COLORS.length],
-                }}
+                style={{ width: `${p.weight}%`, background: p.color }}
               />
             ))}
           </div>
           <div className="space-y-1.5">
-            {sorted.map((p, i) => (
+            {allocItems.map((p) => (
               <div key={p.id} className="flex items-center gap-2 text-xs">
                 <span
                   className="h-2.5 w-2.5 rounded-sm"
-                  style={{ background: ALLOC_COLORS[i % ALLOC_COLORS.length] }}
+                  style={{ background: p.color }}
                 />
                 <span className="w-14 font-semibold">{p.symbol}</span>
                 <span className="tnum flex-1 text-ink-dim">{fmtMoney(p.marketValue)}</span>

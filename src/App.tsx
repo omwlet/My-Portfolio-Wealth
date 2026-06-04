@@ -13,6 +13,7 @@ import { PositionPanel } from "./components/PositionPanel";
 import { PortfolioOverview } from "./components/PortfolioOverview";
 import { PortfolioAnalysis } from "./components/PortfolioAnalysis";
 import { NewsFeed } from "./components/NewsFeed";
+import { SearchBar } from "./components/SearchBar";
 import { Spinner, cn } from "./components/ui";
 
 export default function App() {
@@ -191,20 +192,11 @@ function TopBar() {
   const { theme, toggleTheme, lang, setLang, t } = useUI();
   const { setSelectedSymbol } = usePortfolio();
   const { currency, setCode } = useCurrency();
-  const [query, setQuery] = useState("");
   const navItems = [
     { id: "dashboard", label: t("nav.dashboard") },
     { id: "holdings", label: t("nav.holdings") },
     { id: "news", label: t("nav.news") },
   ];
-  const submitSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    const sym = query.trim().toUpperCase();
-    if (!sym) return;
-    setSelectedSymbol(sym);
-    scrollTo("dashboard");
-    setQuery("");
-  };
   return (
     <header className="sticky top-0 z-20 border-b border-border bg-bg/90 backdrop-blur">
       <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3 px-4 py-3">
@@ -222,18 +214,13 @@ function TopBar() {
         </button>
 
         <div className="flex items-center gap-2">
-          {/* Search */}
-          <form onSubmit={submitSearch} className="relative hidden md:block">
-            <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-dim">
-              ⌕
-            </span>
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value.toUpperCase())}
-              placeholder={t("search.placeholder")}
-              className="w-40 rounded-lg border border-border bg-panel-2 py-1.5 pl-7 pr-2 text-sm uppercase outline-none placeholder:normal-case placeholder:text-ink-dim/70 focus:w-52 focus:ring-1 focus:ring-accent-blue"
-            />
-          </form>
+          {/* Smart search */}
+          <SearchBar
+            onSelect={(sym) => {
+              setSelectedSymbol(sym);
+              scrollTo("dashboard");
+            }}
+          />
 
           <nav className="hidden gap-1 text-sm lg:flex">
             {navItems.map((n) => (

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { usePortfolio } from "../context/PortfolioContext";
 import { useUI } from "../context/UIContext";
 import { fmtMoney, fmtPct, fmtSigned } from "../lib/calc";
@@ -5,10 +6,19 @@ import { AddShares } from "./AddShares";
 import { Panel, cn } from "./ui";
 
 export function PortfolioOverview() {
-  const { stats, selectedSymbol, setSelectedSymbol, removeHolding, lastUpdated } =
-    usePortfolio();
+  const {
+    stats,
+    selectedSymbol,
+    setSelectedSymbol,
+    removeHolding,
+    lastUpdated,
+    cash,
+    setCash,
+    addCash,
+  } = usePortfolio();
   const { t } = useUI();
   const { positions } = stats;
+  const [cashInput, setCashInput] = useState("");
 
   return (
     <Panel
@@ -95,7 +105,34 @@ export function PortfolioOverview() {
                   </tr>
                 );
               })}
-              {!positions.length && (
+              {cash > 0 && (
+                <tr className="border-t border-border bg-panel-2/30">
+                  <td className="py-2 pr-2">
+                    <div className="font-semibold text-accent-yellow">
+                      {t("holdings.cash")}
+                    </div>
+                  </td>
+                  <td className="px-2 text-right text-ink-dim">—</td>
+                  <td className="px-2 text-right text-ink-dim">—</td>
+                  <td className="tnum px-2 text-right font-semibold">{fmtMoney(cash)}</td>
+                  <td className="px-2 text-right text-ink-dim">—</td>
+                  <td className="tnum px-2 text-right font-semibold">{fmtMoney(cash)}</td>
+                  <td className="px-2 text-right text-ink-dim">—</td>
+                  <td className="tnum px-2 text-right text-ink-dim">
+                    {stats.cashWeight.toFixed(1)}%
+                  </td>
+                  <td className="pl-2 text-right">
+                    <button
+                      onClick={() => setCash(0)}
+                      className="rounded px-1.5 text-ink-dim hover:text-down"
+                      title="Remove"
+                    >
+                      ✕
+                    </button>
+                  </td>
+                </tr>
+              )}
+              {!positions.length && cash <= 0 && (
                 <tr>
                   <td colSpan={9} className="py-6 text-center text-ink-dim">
                     {t("holdings.empty")}
@@ -110,6 +147,51 @@ export function PortfolioOverview() {
         <div className="rounded-lg border border-border bg-panel-2/40 p-3">
           <h3 className="mb-2 text-sm font-semibold">{t("holdings.addTitle")}</h3>
           <AddShares />
+
+          {/* Cash balance */}
+          <div className="mt-3 border-t border-border pt-3">
+            <h3 className="mb-2 text-sm font-semibold text-accent-yellow">
+              {t("cash.title")}
+              {cash > 0 && (
+                <span className="tnum ml-2 text-ink-dim">{fmtMoney(cash)}</span>
+              )}
+            </h3>
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-dim">
+                  $
+                </span>
+                <input
+                  type="number"
+                  step="any"
+                  value={cashInput}
+                  onChange={(e) => setCashInput(e.target.value)}
+                  placeholder={t("cash.placeholder")}
+                  className="tnum w-full rounded-lg border border-border bg-panel-2 py-2 pl-6 pr-2 text-sm outline-none placeholder:text-ink-dim/60 focus:ring-1 focus:ring-accent-blue"
+                />
+              </div>
+              <button
+                onClick={() => {
+                  const n = Number(cashInput);
+                  if (n >= 0) setCash(n);
+                  setCashInput("");
+                }}
+                className="rounded-lg bg-panel-2 px-3 py-2 text-xs font-semibold text-ink ring-1 ring-border hover:bg-panel-2/70"
+              >
+                {t("cash.set")}
+              </button>
+              <button
+                onClick={() => {
+                  const n = Number(cashInput);
+                  if (n) addCash(n);
+                  setCashInput("");
+                }}
+                className="rounded-lg bg-up/15 px-3 py-2 text-xs font-semibold text-up ring-1 ring-up/30 hover:bg-up/25"
+              >
+                {t("cash.add")}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </Panel>

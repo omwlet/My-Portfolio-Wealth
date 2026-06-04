@@ -200,6 +200,28 @@ app.get("/api/chart/:symbol", async (req, res) => {
   }
 });
 
+// Smart ticker search (autocomplete): symbol + company name + exchange.
+app.get("/api/search", async (req, res) => {
+  const q = String(req.query.q ?? "").trim();
+  if (!q) return res.json({ results: [] });
+  try {
+    const data = await yfetch(
+      `/v1/finance/search?q=${encodeURIComponent(q)}&quotesCount=10&newsCount=0&enableFuzzyQuery=true&quotesQueryId=tss_match_phrase_query`
+    );
+    const results = (data?.quotes ?? [])
+      .filter((it) => it.symbol)
+      .map((it) => ({
+        symbol: it.symbol,
+        name: it.longname || it.shortname || it.symbol,
+        exchange: it.exchDisp || it.exchange || "",
+        type: it.quoteType || it.typeDisp || "",
+      }));
+    res.json({ results });
+  } catch (e) {
+    res.status(502).json({ error: String(e?.message ?? e), results: [] });
+  }
+});
+
 // FX rate: how many units of `to` per 1 USD (e.g. to=THB -> ~36).
 app.get("/api/fx", async (req, res) => {
   const to = String(req.query.to ?? "USD").toUpperCase();
