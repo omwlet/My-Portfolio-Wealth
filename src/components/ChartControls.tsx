@@ -36,7 +36,7 @@ export function ChartControls({
     { key: "volume", label: t("controls.volume") },
   ] as const;
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-y border-border px-5 py-2.5 text-xs">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-y border-border px-3 py-2 text-xs sm:gap-x-4 sm:px-5 sm:py-2.5">
       {/* Ranges */}
       <div className="flex items-center gap-1">
         {RANGES.map((r) => (
@@ -44,7 +44,7 @@ export function ChartControls({
             key={r}
             onClick={() => setRange(r)}
             className={cn(
-              "rounded-md px-2.5 py-1 font-semibold transition-colors",
+              "rounded-md px-2.5 py-1.5 font-semibold transition-colors sm:py-1",
               range === r
                 ? "bg-accent-blue/20 text-accent-blue"
                 : "text-ink-dim hover:bg-panel-2 hover:text-ink"
@@ -126,7 +126,7 @@ function TypeBtn({
     <button
       onClick={onClick}
       className={cn(
-        "rounded-md px-2.5 py-1 font-medium transition-colors",
+        "rounded-md px-2.5 py-1.5 font-medium transition-colors sm:py-1",
         active
           ? "bg-panel-2 text-ink ring-1 ring-border"
           : "text-ink-dim hover:text-ink"
@@ -152,7 +152,7 @@ function Toggle({
     <button
       onClick={onClick}
       className={cn(
-        "flex items-center gap-1.5 rounded-md px-2 py-1 font-medium transition-colors",
+        "flex items-center gap-1.5 rounded-md px-2 py-1.5 font-medium transition-colors sm:py-1",
         on ? "bg-panel-2 ring-1 ring-border" : "opacity-60 hover:opacity-100"
       )}
     >

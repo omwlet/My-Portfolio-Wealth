@@ -88,9 +88,9 @@ export default function App() {
     <div className="min-h-screen bg-bg text-ink">
       <TopBar />
 
-      <main className="mx-auto max-w-[1600px] space-y-4 px-4 pb-12 pt-4">
+      <main className="mx-auto max-w-[1600px] space-y-4 px-3 pb-12 pt-4 sm:px-4">
         {/* ===== Split screen: chart (2/3) + calculator (1/3) ===== */}
-        <section id="dashboard" className="grid scroll-mt-20 gap-4 lg:grid-cols-3">
+        <section id="dashboard" className="grid scroll-mt-28 gap-4 md:scroll-mt-20 lg:grid-cols-3">
           {/* LEFT 2/3 */}
           <div className="lg:col-span-2 overflow-hidden rounded-xl border border-border bg-panel">
             <AssetHeader quote={quote} symbol={selectedSymbol} />
@@ -104,7 +104,7 @@ export default function App() {
               sub={sub}
               setSub={setSub}
             />
-            <div className="relative h-[420px] w-full">
+            <div className="relative h-[300px] w-full sm:h-[360px] lg:h-[420px]">
               {chartLoading && (
                 <div className="absolute inset-0 z-10 flex items-center justify-center bg-panel/70">
                   <Spinner label={t("chart.loading", { sym: selectedSymbol })} />
@@ -162,7 +162,7 @@ export default function App() {
         </section>
 
         {/* ===== Portfolio management ===== */}
-        <div id="holdings" className="scroll-mt-20">
+        <div id="holdings" className="scroll-mt-28 md:scroll-mt-20">
           <PortfolioOverview />
         </div>
 
@@ -171,7 +171,7 @@ export default function App() {
           <div className="lg:col-span-2">
             <PortfolioAnalysis />
           </div>
-          <div id="news" className="scroll-mt-20 lg:col-span-1">
+          <div id="news" className="scroll-mt-28 md:scroll-mt-20 lg:col-span-1">
             <NewsFeed />
           </div>
         </div>
@@ -198,24 +198,27 @@ function TopBar() {
     { id: "news", label: t("nav.news") },
   ];
   return (
-    <header className="sticky top-0 z-20 border-b border-border bg-bg/90 backdrop-blur">
-      <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3 px-4 py-3">
+    <header className="safe-top sticky top-0 z-20 border-b border-border bg-bg/90 backdrop-blur">
+      <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-2 px-3 py-2.5 sm:gap-3 sm:px-4 sm:py-3">
         <button
           onClick={() => scrollTo("dashboard")}
-          className="flex items-center gap-2"
+          className="flex shrink-0 items-center gap-2"
         >
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-up/20 text-up">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-up/20 text-up">
             ◆
           </span>
-          <span className="text-lg font-bold tracking-tight">{t("brand.title")}</span>
-          <span className="ml-1 rounded bg-panel-2 px-1.5 py-0.5 text-[10px] font-semibold text-ink-dim">
+          <span className="whitespace-nowrap text-base font-bold tracking-tight sm:text-lg">
+            {t("brand.title")}
+          </span>
+          <span className="ml-1 hidden rounded bg-panel-2 px-1.5 py-0.5 text-[10px] font-semibold text-ink-dim sm:inline">
             {t("badge.live")}
           </span>
         </button>
 
         <div className="flex items-center gap-2">
-          {/* Smart search */}
+          {/* Smart search (inline on tablet/desktop; phones get a row below) */}
           <SearchBar
+            className="hidden md:block"
             onSelect={(sym) => {
               setSelectedSymbol(sym);
               scrollTo("dashboard");
@@ -266,15 +269,33 @@ function TopBar() {
             ))}
           </div>
 
-          {/* Theme toggle */}
+          {/* Theme toggle (phones get it next to the search row below) */}
           <button
             onClick={toggleTheme}
             title={theme === "dark" ? t("settings.light") : t("settings.dark")}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-panel-2 text-ink-dim transition-colors hover:text-ink"
+            className="hidden h-8 w-8 items-center justify-center rounded-lg border border-border bg-panel-2 text-ink-dim transition-colors hover:text-ink md:flex"
           >
             {theme === "dark" ? "☀" : "☾"}
           </button>
         </div>
+      </div>
+
+      {/* Phone-only search row */}
+      <div className="flex items-center gap-2 border-t border-border px-3 py-2 md:hidden">
+        <SearchBar
+          className="flex-1"
+          onSelect={(sym) => {
+            setSelectedSymbol(sym);
+            scrollTo("dashboard");
+          }}
+        />
+        <button
+          onClick={toggleTheme}
+          title={theme === "dark" ? t("settings.light") : t("settings.dark")}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-panel-2 text-ink-dim transition-colors hover:text-ink"
+        >
+          {theme === "dark" ? "☀" : "☾"}
+        </button>
       </div>
     </header>
   );

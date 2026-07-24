@@ -7,10 +7,10 @@ export function AssetHeader({ quote, symbol }: { quote?: Quote; symbol: string }
   const { t } = useUI();
   const up = (quote?.change ?? 0) >= 0;
   return (
-    <div className="flex flex-wrap items-end justify-between gap-4 px-5 py-4">
+    <div className="flex flex-wrap items-end justify-between gap-3 px-4 py-3 sm:gap-4 sm:px-5 sm:py-4">
       <div>
         <div className="flex items-center gap-3">
-          <h1 className="text-3xl font-bold tracking-tight">{symbol}</h1>
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{symbol}</h1>
           <span className="rounded-md bg-panel-2 px-2 py-0.5 text-xs text-ink-dim">
             {quote?.exchange || "—"}
           </span>
@@ -19,7 +19,7 @@ export function AssetHeader({ quote, symbol }: { quote?: Quote; symbol: string }
       </div>
 
       <div className="text-right">
-        <div className="tnum text-4xl font-bold leading-none">
+        <div className="tnum text-3xl font-bold leading-none sm:text-4xl">
           {quote ? fmtMoney(quote.price) : "—"}
         </div>
         <div
@@ -37,7 +37,7 @@ export function AssetHeader({ quote, symbol }: { quote?: Quote; symbol: string }
         </div>
       </div>
 
-      <dl className="flex w-full gap-6 border-t border-border pt-3 text-xs sm:w-auto sm:border-t-0 sm:pt-0">
+      <dl className="flex w-full flex-wrap gap-x-6 gap-y-2 border-t border-border pt-3 text-xs sm:w-auto sm:border-t-0 sm:pt-0">
         <Field label={t("header.prevClose")} value={quote ? fmtMoney(quote.previousClose) : "—"} />
         <Field label={t("header.high52")} value={quote?.high52 ? fmtMoney(quote.high52) : "—"} />
         <Field label={t("header.low52")} value={quote?.low52 ? fmtMoney(quote.low52) : "—"} />
